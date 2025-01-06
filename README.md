@@ -3,3 +3,4 @@
 
 ## Guide
 make a secrets.py with WIFI_SSID="" and WIFI_PASSWORD=""
+upload the cherry-hq.af font to your presto
