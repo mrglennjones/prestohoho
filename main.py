@@ -56,7 +56,7 @@ def connect_to_wifi():
 def fetch_joke():
     headers = {
         "Accept": "application/json",
-        "User-Agent": "HeyPrestoDadJokeDisplayer (https://github.com/mrglennjones/prestohoho)"
+        "User-Agent": "HeyPrestoDadJokeDisplayer (https://github.com/your-repo)"
     }
     try:
         print("Fetching joke from API...")
@@ -149,50 +149,132 @@ def falling_confetti():
 
 
 def rising_balloons():
-    balloons = [Polygon() for _ in range(10)]
-    positions = [[random.randint(0, WIDTH), random.randint(-HEIGHT, 0)] for _ in balloons]
-    speeds = [random.randint(1, 3) for _ in balloons]
+    # Number of balloons
+    balloons = []
+    knots = []
+    positions = []
+    speeds = []
+    sizes = []
 
-    for balloon in balloons:
-        balloon.circle(0, 0, random.randint(10, 50))
+    for _ in range(10):
+        # Create the balloon body (circle)
+        balloon = Polygon()
+        radius = random.randint(20, 40)
+        balloon.circle(0, 0, radius)
+
+        # Create the knot (small rectangle)
+        knot = Polygon()
+        knot_width = radius // 4
+        knot_height = radius // 6
+        knot.rectangle(-knot_width // 2, 0, knot_width, knot_height)
+
+        # Store position and motion properties
+        x = random.randint(0, WIDTH)
+        y = random.randint(-HEIGHT, 0)
+        speed = random.uniform(1, 3)  # Rising speed
+
+        balloons.append(balloon)
+        knots.append(knot)
+        positions.append([x, y])
+        speeds.append(speed)
+        sizes.append(radius)
 
     def draw(tick):
         display.set_pen(BLACK)
         display.clear()
+
         for i, (x, y) in enumerate(positions):
-            positions[i][1] -= speeds[i]
-            if y < -20:
-                positions[i][1] = HEIGHT  # Reset to the bottom
+            positions[i][1] -= speeds[i]  # Rising speed
+            positions[i][0] += math.sin(tick / 30) * 2  # Horizontal drift
+
+            # Reset balloon if it goes off-screen
+            if y < -50 - sizes[i]:  # Ensure the entire balloon is off-screen
+                positions[i][1] = HEIGHT
                 positions[i][0] = random.randint(0, WIDTH)
-            display.set_pen(COLORS[i % len(COLORS)])
+
+            # Set random color for the balloon
+            color = COLORS[i % len(COLORS)]
+            display.set_pen(color)
+
+            # Draw the balloon body
             t = Transform()
             t.translate(x, y)
             vector.set_transform(t)
             vector.draw(balloons[i])
 
+            # Draw the knot in the same color as the balloon
+            t = Transform()
+            t.translate(x, y + sizes[i])  # Position at the bottom of the balloon
+            vector.set_transform(t)
+            vector.draw(knots[i])
+
+            # Draw the tether string
+            string = Polygon()
+            string.rectangle(-1, 0, 2, 40)  # Narrow rectangle for string
+            display.set_pen(WHITE)
+            t = Transform()
+            t.translate(x, y + sizes[i] + 10)  # Slightly below the knot
+            vector.set_transform(t)
+            vector.draw(string)
+
     return draw
 
-def scrolling_clouds():
-    clouds = [Polygon() for _ in range(5)]
-    positions = [random.randint(-100, WIDTH) for _ in clouds]
 
-    for cloud in clouds:
-        cloud.circle(0, 0, random.randint(10, 50))
+
+def scrolling_clouds():
+    clouds = []
+    positions = []
+    speeds = []
+    colors = []
+
+    for _ in range(5):  # Number of clouds
+        # Create a cloud as a list of circles
+        cloud = []
+        num_puffs = random.randint(4, 6)  # Random number of circles per cloud
+        base_size = random.randint(20, 40)  # Base size for puffs
+        for _ in range(num_puffs):
+            offset_x = random.randint(-base_size, base_size)  # Horizontal offset
+            offset_y = random.randint(-base_size // 2, base_size // 2)  # Vertical offset
+            size = random.randint(base_size // 2, base_size)  # Random size for each puff
+            cloud.append((offset_x, offset_y, size))  # Store circle properties
+
+        # Assign random starting positions, speeds, and colors
+        x = random.randint(-WIDTH, WIDTH)  # Start off-screen for scrolling
+        y = random.randint(HEIGHT // 4, 3 * HEIGHT // 4)  # Random vertical position
+        speed = random.uniform(0.5, 2)  # Slow scrolling speed
+        color = COLORS[random.randint(0, len(COLORS) - 1)]  # Random solid color
+
+        clouds.append(cloud)
+        positions.append([x, y])
+        speeds.append(speed)
+        colors.append(color)
 
     def draw(tick):
         display.set_pen(BLACK)
         display.clear()
-        for i, x in enumerate(positions):
-            positions[i] -= 2
-            if x < -40:
-                positions[i] = WIDTH + 40  # Reset to the right
-            display.set_pen(COLORS[i % len(COLORS)])
-            t = Transform()
-            t.translate(x, HEIGHT // 4 + i * 40)
-            vector.set_transform(t)
-            vector.draw(clouds[i])
+
+        for i, (x, y) in enumerate(positions):
+            # Update position
+            positions[i][0] -= speeds[i]  # Scroll leftward
+            if x < -WIDTH:  # Reset cloud when it goes off-screen
+                positions[i][0] = WIDTH + 50  # Start off the right edge
+                positions[i][1] = random.randint(HEIGHT // 4, 3 * HEIGHT // 4)  # Random vertical position
+
+            # Set cloud color
+            display.set_pen(colors[i])
+
+            # Draw each circle in the cloud
+            for offset_x, offset_y, size in clouds[i]:
+                t = Transform()
+                t.translate(positions[i][0] + offset_x, positions[i][1] + offset_y)
+                vector.set_transform(t)
+                puff = Polygon()
+                puff.circle(0, 0, size)
+                vector.draw(puff)
 
     return draw
+
+
 
 def spinning_stars():
     stars = [Polygon() for _ in range(5)]
