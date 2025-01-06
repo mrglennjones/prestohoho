@@ -1,5 +1,3 @@
-#Dedicated to Jenius
-
 from picovector import ANTIALIAS_FAST,ANTIALIAS_BEST, PicoVector, Polygon, Transform
 from presto import Presto
 import network
@@ -297,24 +295,131 @@ def spinning_stars():
     return draw
 
 def pulsing_blobs():
-    blobs = [Polygon() for _ in range(5)]
-    for blob in blobs:
-        blob.circle(0, random.randint(0, 70), random.randint(0, 100))
+    blobs = []
+    positions = []
+    base_scales = []
+    colors = []
+
+    for _ in range(5):  # Number of blobs
+        # Generate random points for an organic blob shape
+        num_points = random.randint(6, 10)  # Number of "arms" for the blob
+        radius = random.randint(20, 40)  # Base radius
+        points = []
+        for angle in range(0, 360, 360 // num_points):
+            rad = math.radians(angle)
+            r = radius + random.randint(-10, 10)  # Add randomness to radius
+            x = int(r * math.cos(rad))
+            y = int(r * math.sin(rad))
+            points.append((x, y))
+
+        # Create the blob using the random points
+        blob = Polygon()
+        blob.path(*points)  # Pass the points to define the blob's path
+
+        # Random starting positions and scales
+        x = random.randint(0, WIDTH)
+        y = random.randint(0, HEIGHT)
+        base_scale = random.uniform(0.8, 1.2)
+
+        blobs.append(blob)
+        positions.append([x, y])
+        base_scales.append(base_scale)
+        colors.append(COLORS[random.randint(0, len(COLORS) - 1)])  # Random initial color
 
     def draw(tick):
         display.set_pen(BLACK)
         display.clear()
-        for i, blob in enumerate(blobs):
-            scale = 1 + 0.5 * math.sin((tick + i * 50) / 100)
+
+        for i, (x, y) in enumerate(positions):
+            # Smooth pulsing effect
+            scale = base_scales[i] + 0.5 * math.sin((tick + i * 50) / 30)
+
+            # Cycle through colors
+            color_index = (tick // 20 + i) % len(COLORS)
+            display.set_pen(COLORS[color_index])
+
+            # Apply transformations
             t = Transform()
-            t.translate(WIDTH // 2, HEIGHT // 2)
+            t.translate(x, y)
             t.scale(scale, scale)
-            t.translate(-50 + i * 40, -50 + i * 40)
-            display.set_pen(COLORS[i % len(COLORS)])
             vector.set_transform(t)
-            vector.draw(blob)
+
+            # Draw the blob
+            vector.draw(blobs[i])
 
     return draw
+
+def space_travel_stars():
+    stars = []
+
+    # Generate stars with random starting angles, speeds, and colors
+    for _ in range(50):  # Number of stars
+        star = Polygon()
+        star.circle(0, 0, 2)  # Small circle to represent the star
+
+        # Assign random properties
+        angle = random.uniform(0, 360)  # Direction in degrees
+        speed = random.uniform(2, 6)  # Speed of outward movement
+        size = random.uniform(1, 2)  # Initial size
+        color = COLORS[random.randint(0, len(COLORS) - 1)]  # Random color
+        x = WIDTH // 2
+        y = HEIGHT // 2
+
+        stars.append({
+            "star": star,
+            "angle": angle,
+            "speed": speed,
+            "size": size,
+            "color": color,
+            "pos": [x, y]
+        })
+
+    def draw(tick):
+        display.set_pen(BLACK)
+        display.clear()
+
+        for star_data in stars:
+            star = star_data["star"]
+            angle = star_data["angle"]
+            speed = star_data["speed"]
+            size = star_data["size"]
+            color = star_data["color"]
+            pos = star_data["pos"]
+
+            # Calculate movement based on angle
+            rad = math.radians(angle)
+            pos[0] += speed * math.cos(rad)  # Update X position
+            pos[1] += speed * math.sin(rad)  # Update Y position
+
+            # Scale the star as it moves outward
+            size += 0.05
+            star_data["size"] = size
+
+            # Reset the star when it moves off-screen
+            if pos[0] < -10 or pos[0] > WIDTH + 10 or pos[1] < -10 or pos[1] > HEIGHT + 10:
+                pos[0] = WIDTH // 2
+                pos[1] = HEIGHT // 2
+                star_data["size"] = random.uniform(1, 2)  # Reset size
+                star_data["angle"] = random.uniform(0, 360)  # New random direction
+                star_data["speed"] = random.uniform(2, 6)  # New random speed
+                star_data["color"] = COLORS[random.randint(0, len(COLORS) - 1)]  # New random color
+
+            # Set star color
+            display.set_pen(color)
+
+            # Apply transformations for scaling and positioning
+            t = Transform()
+            t.translate(pos[0], pos[1])
+            t.scale(size, size)
+            vector.set_transform(t)
+
+            # Draw the star
+            vector.draw(star)
+
+    return draw
+
+
+
 # Display joke with animation
 def display_with_animation(joke, draw_animation):
     tick = 0
@@ -371,7 +476,8 @@ def main():
         rising_balloons(),
         scrolling_clouds(),
         spinning_stars(),
-        pulsing_blobs()
+        pulsing_blobs(),
+        space_travel_stars()
     ]
     animation_index = 0
 
